@@ -1,0 +1,79 @@
+yum install vim git wget yum-utils deltarpm createrepo ruby isomd5sum -y
+yum install python-argparse PyYAML python-jinja2 rubygems nodejs nodejs-requirejs
+gem install builder
+gem install bundle
+gem install mcollective-client
+如果make img 需要yum install syslinux-extlinux.x86_64
+
+git clone https://github.com/Mirantis/fuel-main.git
+
+#!/bin/sh
+make iso YUM_REPOS=proprietary \
+    MIRROR_CENTOS=http://192.168.6.71/fuelweb-repo/3.2/centos \
+    MIRROR_EGGS=http://192.168.6.71/fuelweb-repo/3.2/eggs \
+    MIRROR_GEMS=http://192.168.6.71/fuelweb-repo/3.2/gems \
+    MIRROR_SRC=http://192.168.6.71/fuelweb-repo/3.2/src
+
+centos系统：vim mirror/src/module.mk 将wget命令中--no-use-server-timestamps去掉
+
+vim mirror/centos/repo.mk
+注释掉test两行
+$(BUILD_DIR)/mirror/centos/yum.done: \
+                $(BUILD_DIR)/mirror/centos/yum-config.done \
+                $(SOURCE_DIR)/requirements-rpm.txt
+        yum -c $(BUILD_DIR)/mirror/centos/etc/yum.conf clean all
+        rm -rf /var/tmp/yum-$$USER-*/
+        yumdownloader -q --resolve --archlist=$(CENTOS_ARCH) \
+                -c $(BUILD_DIR)/mirror/centos/etc/yum.conf \
+                --destdir=$(LOCAL_MIRROR_CENTOS_OS_BASEURL)/Packages \
+                $(REQUIRED_RPMS) 2>&1 | tee $(BUILD_DIR)/mirror/centos/yumdownloader.log
+        # Yumdownloader/repotrack workaround number one:
+        # i686 packages are downloaded by mistake. Remove them
+        rm -rf $(LOCAL_MIRROR_CENTOS_OS_BASEURL)/Packages/*.i686.rpm
+        # Yumdownloader workaround number two:
+        # yumdownloader should fail if some packages are missed
+        # test `grep "No Match" $(BUILD_DIR)/mirror/centos/yumdownloader.log | wc -l` = 0
+        # Yumdownloader workaround number three:
+        # We have exactly two downloading conflicts: django and mysql
+        # test `grep "has depsolving problems" $(BUILD_DIR)/mirror/centos/yumdownloader.log | wc -l` = 2
+        $(ACTION.TOUCH)
+
+linux-izak:/home/yuanchao/Downloads/fuel-main # mkdir -p local_mirror/centos/os/x86_64/Packages/
+linux-izak:/home/yuanchao/Downloads/fuel-main # cp /home/yuanchao/public_html/fuelweb-repo/3.2/centos/os/x86_64/Packages/*.rpm local_mirror/centos/os/x86_64/Packages/
+
+fuel-main:
+packages/eggs/module.mk
+文件中r.js前面加node
+
+
+linux-izak:/home/yuanchao/Downloads/fuel-main # cd /home/yuanchao/Downloads/fuel-main/build/repos/nailgun/nailgun/
+linux-izak:/home/yuanchao/Downloads/fuel-main/build/repos/nailgun/nailgun # wget http://requirejs.org/docs/release/2.1.8/r.js
+linux-izak:/home/yuanchao/Downloads/fuel-main # rpm --rebuilddb
+
+
+
+fuelweb:
+nailgun/module.mk 
+文件中r.js前面加node
+可能碰到的问题：
+/root/openstacktest/fuelweb/local_mirror/centos/os/x86_64/repodata/
+cd /root/openstacktest/fuelweb/nailgun
+wget http://requirejs.org/docs/release/2.1.8/r.js
+需要的目标“/root/openstacktest/fuelweb/local_mirror/src/1cac0902c3dd4e98a470e4d4326777a1da8834eb.zip
+”
+vim iso/module.mk
+/usr/share/syslinux/mbr.bin
+
+isomd5sum-1.0.6-1.el6.x86_64.rpm
+
+
+最终3.1fuelweb版本过程简化如下：
+# yum groupinstall "Development Tools"
+# yum install vim wget createrepo ruby ruby-devel rpm-build rubygem-bundler gcc-c++ mariadb-devel syslinux-extlinux python-jinja2 PyYAML nodejs nodejs-requirejs isomd5sum
+# gem install builder
+ 
+# git clone https://github.com/nfschina/fuelweb.git
+# cd fuelweb/
+# git clone https://github.com/nfschina/fuel.git
+# git clone https://github.com/nfschina/astute.git
+# make img
